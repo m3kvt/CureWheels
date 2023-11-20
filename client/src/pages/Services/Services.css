@@ -1,0 +1,8 @@
+#servicepage{    
+    background-color: #527C88;
+}
+.navpage{
+        display:flex;
+        flex-direction: row;    
+        justify-content: flex-start;
+}

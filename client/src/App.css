@@ -1,0 +1,14 @@
+*{
+  margin:0;
+  padding:0;
+  text-decoration: none;
+  box-sizing: border-box;
+}
+
+.navpage{
+    display:flex;
+      flex-direction:column;
+      justify-content: flex-start;
+      flex-grow: 1;
+      color: #fff;
+  }

@@ -1,0 +1,12 @@
+.profile{
+    display:flex;
+    justify-content: flex-start;
+}
+.profile_details{
+    display:flex;
+    flex-direction: column;
+    justify-content:center;
+    align-items: flex-start;
+    margin:5%;
+    color:#fff;
+}

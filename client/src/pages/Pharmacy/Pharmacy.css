@@ -1,0 +1,35 @@
+#pharmpage{
+    background-color: #145374;
+    
+}
+
+.pharmpage{
+    margin:5%;
+    display:flex;
+    flex-direction: column;
+    
+}
+
+.pharmacies{
+    /* border:solid 1px rgb(243, 239, 239); */
+    display:flex;
+    flex-direction: column;
+    justify-content: space-evenly;
+    flex-grow: 1;
+    margin:5%;
+}
+.pharmacy{
+    align-items: center;
+    display:flex;
+    flex-direction: column;
+    background-color:#fff;
+    color:black;
+    border-radius: 10px;
+    justify-content: space-between;
+    flex-grow: 1;
+    padding:5% ;
+    margin:2%;
+}
+/* .pharmacy_link{
+   
+} */
