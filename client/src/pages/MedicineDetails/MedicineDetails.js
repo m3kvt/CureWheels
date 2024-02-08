@@ -5,21 +5,20 @@ import { useParams } from "react-router-dom";
 import axios from "axios";
 
 const MedicineDetails = () => {
-  const { pharmacyName} = useParams();
-  const PH_ID=localStorage.getItem("PH_ID")
-  console.log("pharmacyName:",pharmacyName)
-  localStorage.setItem('pharmacyName',pharmacyName)
+  const { pharmacyName } = useParams();
+  const PH_ID = localStorage.getItem("PH_ID");
+  console.log("pharmacyName:", pharmacyName);
+  localStorage.setItem("pharmacyName", pharmacyName);
   const [medicines, setMedicines] = useState([]);
   const [quantities, setQuantities] = useState({});
-  const storedUserData = JSON.parse(localStorage.getItem('userData'));
-  const userId=storedUserData.userId;
-  console.log("medidetails id:",userId)
-  //const Cus_Id=storedUserData.userId;
+  const storedUserData = JSON.parse(localStorage.getItem("userData"));
+  const userId = storedUserData.userId;
+  console.log("medidetails id:", userId);
   useEffect(() => {
     const fetchMedicines = async () => {
       try {
         const response = await axios.get(
-          `http://localhost:3001/${pharmacyName}`
+          `http://localhost:3001/pharmacies/${pharmacyName}`
         );
         setMedicines(response.data.medicineDetails);
       } catch (error) {
@@ -27,23 +26,25 @@ const MedicineDetails = () => {
       }
     };
     fetchMedicines();
-  }, [pharmacyName,userId]);
+  }, [pharmacyName, userId]);
 
   const handleAdd = async (M_ID) => {
     const qty = quantities[M_ID];
     try {
-      console.log("M_ID:",M_ID)
-      localStorage.setItem("M_ID",M_ID)
-      // Make a POST request to add medicines to the order with the specified quantity
-      await axios.post(`http://localhost:3001/pageorder/addmedicine/${PH_ID}/${M_ID}/${userId}`, {
-        Qty: qty,
-      });
-      // Optionally, you can update the local state or perform any other actions on success
+      console.log("M_ID:", M_ID);
+      localStorage.setItem("M_ID", M_ID);
+      await axios.post(
+        `http://localhost:3001/pageorder/addmedicine/${PH_ID}/${M_ID}/${userId}`,
+        {
+          Qty: qty,
+        }
+      );
+
       console.log(
         `Added ${qty} units of medicine with M_ID ${M_ID} to the order`
       );
     } catch (error) {
-      // Handle errors (e.g., show an error message)
+      // Handle errors
       console.error("Error adding medicine to order:", error);
     }
   };
@@ -52,16 +53,17 @@ const MedicineDetails = () => {
     const qtyToDelete = quantities[M_ID];
 
     try {
-      // Make a POST request to delete medicines from the order with the specified quantity
-      await axios.post(`http://localhost:3001/pageorder/deletemedicine/${PH_ID}/${M_ID}/${userId}`, {
-        QtyToDelete: qtyToDelete,
-      });
-      // Optionally, you can update the local state or perform any other actions on success
+      await axios.post(
+        `http://localhost:3001/pageorder/deletemedicine/${PH_ID}/${M_ID}/${userId}`,
+        {
+          QtyToDelete: qtyToDelete,
+        }
+      );
+
       console.log(
         `Deleted ${qtyToDelete} units of medicine with M_ID ${M_ID} from the order`
       );
     } catch (error) {
-      // Handle errors (e.g., show an error message)
       console.error("Error deleting medicine from order:", error);
     }
   };
@@ -87,19 +89,20 @@ const MedicineDetails = () => {
   return (
     <div className="navpage" id="medicinepage">
       <div className="medisidebar">
-        <Sidebar userId={userId}/>
+        <Sidebar userId={userId} />
       </div>
       <div className="medicinepage">
         <h2>Greetings from {pharmacyName} </h2>
-        <h4>Pick up your medicines</h4>
         <br />
+        <h5>Pick your medicines</h5>
+
         <input
           type="text"
           value={searchQuery}
           onChange={handleSearchChange}
-          placeholder="  search"
+          placeholder="  search here"
           className="search"
-          style={{ width: "250px", fontSize: "15px" }}
+          style={{ width: "350px", fontSize: "15px" }}
         />
         <div className="medicines">
           {filteredMedicines.map((medicine) => (
@@ -131,7 +134,7 @@ const MedicineDetails = () => {
                 <div className="buttons">
                   <button onClick={() => handleAdd(medicine.M_ID)}>Add</button>
                   <button onClick={() => handleDelete(medicine.M_ID)}>
-                    Delete 
+                    Delete
                   </button>
                 </div>
               </div>
@@ -144,33 +147,3 @@ const MedicineDetails = () => {
 };
 
 export default MedicineDetails;
-
-//   return (
-{
-  /* <div className="pharmacies">
-          {pharmacies.map((pharmacy) => (
-            <div key={pharmacy} className="pharmacy">
-              <Link to={`/${pharmacy}`} className="pharmacy_link">
-                {pharmacy} 
-              </Link>
-            </div>
-          ))}
-        </div> */
-}
-
-//     <div>
-//       <h1>{pharmacyName} Medicine Details</h1>
-//       <ul>
-//         {medicineDetails.map((med) => (
-//           <li key={med.M_ID}>
-//             <p>Name: {med.Name}</p>
-//             <p>Mfg_date :{med.Mfg_date}</p>
-//             <p>expiry_date :{med.Exp_date}</p>
-//             <p>Price :{med.Price}</p>
-//             <p>Manufacturer :{med.Manufacturer}</p>
-//             {/* Add more details as needed */}
-//           </li>
-//         ))}
-//       </ul>
-//     </div>
-//   );

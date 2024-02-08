@@ -1,8 +1,47 @@
 #servicepage{    
     background-color: #527C88;
+    
 }
 .navpage{
         display:flex;
         flex-direction: row;    
         justify-content: flex-start;
+        
+}
+.servicepage{
+  margin:5%;
+}
+.services{
+    /* border:solid 1px rgb(243, 239, 239); */
+    display:flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    margin:0;
+    color:rgb(33, 25, 54);
+    
+    
+}
+.service{
+    /* align-items: center; */
+    display:flex;
+    flex-direction: column;
+    background-color:#e9ebeb;
+    color:black;
+    width:fit-content;
+    height:70%;
+    gap:12px;
+    /* justify-content: space-around; */
+    /* flex-grow: 1; */
+    position: relative;
+  margin: 8px;
+  padding: 1%;
+  transition: transform 0.3s ease, filter 0.3s ease;
+
+  &:hover {
+    transform: scale(1.1); 
+    filter: brightness(1.1);
+    border:2px solid #87ccef;
+    border-radius: 0px 20px;
+  }
+  
 }

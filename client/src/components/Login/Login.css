@@ -31,7 +31,7 @@
     margin-top: 40px;
     display:flex;
     flex-direction:column;
-    gap:20px;
+    gap:5px;
 }
 .input{
     display:flex;
@@ -68,4 +68,14 @@
 .gray{
     background:#c6c5c5;
     color: #676767;
+}
+.error{
+    font-size:9px;
+    margin:0;
+    padding: 0;
+    color: red;
+}
+.custom-date-picker{
+    width: 230px;
+  height: 25px;
 }

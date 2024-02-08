@@ -1,9 +1,7 @@
-#pharmpage{
-    background-color: #173849;
-    flex-direction: row;
+#centrepage{
+    flex-direction:row;
 }
-
-.pharmpage{
+.centrepage{
     margin:5%;
     display:flex;
     flex-direction: column;
@@ -11,15 +9,14 @@
     overflow: hidden;
     
 }
-
-.pharmacies{
+.centres{
     /* border:solid 1px rgb(243, 239, 239); */
     display:flex;   
     /* justify-content: space-around; */
     flex-grow: 1;
     margin:5% 0%;
 }
-.pharmacy{
+.centre{
     /* align-items: center; */
     display:flex;
     flex-direction: column;
@@ -43,8 +40,7 @@
   }
   
 }
-
-.pharmacy_link{
+.centre_link{
     text-decoration:double;
     color: rgb(114, 156, 215) ;
     &:hover {

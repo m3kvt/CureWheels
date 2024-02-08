@@ -3,8 +3,6 @@ import Login from "../../components/Login/Login";
 import "./Home.css";
 import { useParams } from "react-router-dom";
 function Home() {
-  // const userId=useParams();
-  // console.log("home userid:",userId)
   return (
     <div className="home_container" id="home">
       <div className="site-details">

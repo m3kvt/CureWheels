@@ -35,27 +35,27 @@ const Sidebar = () =>{
     <div className="side_container" id="sidebar">
       <div className="sidebar">
         <div className="section">
-          <Link to="/pharmacies" className="link" activeclassName="active">
+          <Link to="/pharmacies" className="link" activeClassName="active">
             Search Medicines
           </Link>
         </div>
         <div className="section">
-          <Link to="/pageservices" className="link" activeclassName="active">
+          <Link to="/carecentres" className="link" activeClassName="active">
             Services
           </Link>
         </div>
         <div className="section">
-          <Link to={`/pageorder/${userId}`} className="link" activeclassName="active">
+          <Link to={`/pageorder/${userId}`} className="link" activeClassName="active">
             Ordered Medicines
           </Link>
         </div>
         <div className="section">
-          <Link to="/bookedservices" className="link" activeclassName="active">
+          <Link to="/bookedservices" className="link" activeClassName="active">
             Booked Services
           </Link>
         </div>
         <div className="section">
-          <Link to={`/pageprofile/${userId}`} className="link" activeclassName="active" >
+          <Link to={`/pageprofile/${userId}`} className="link" activeClassName="active" >
             Profile
           </Link>
         </div>
@@ -101,7 +101,7 @@ const Sidebar = ({children}) => {
                </div>
                {
                    menuItem.map((item, index)=>(
-                       <NavLink to={item.path} key={index} className="link" activeclassname="active">
+                       <NavLink to={item.path} key={index} className="link" activeClassname="active">
                            
                            <div style={{display: isOpen ? "block" : "none"}} className="link_text">{item.title}</div>
                        </NavLink>

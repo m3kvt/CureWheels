@@ -38,7 +38,12 @@ app.use(
   })
 );
 //create connection
-
+// Require the service router
+// const serviceRouter = require('./routes/service');
+// const medicineRouter =require('./routes/medicine');
+// Use the service router for a specific path
+// app.use('/service', serviceRouter);
+// app.use('/medicine',medicineRouter);
 const db = mysql.createConnection({
   host: "localhost",
   user: "root",
@@ -65,6 +70,7 @@ const checkAuth = (req, res, next) => {
 };
 
 //Register
+
 app.post("/register", (req, res) => {
   const name = req.body.name;
   const dob = req.body.dob;
@@ -72,7 +78,7 @@ app.post("/register", (req, res) => {
   const contactNo = req.body.contactNo;
   const email = req.body.email;
   const storedPassword = req.body.password;
-  console.log('entered details');
+  console.log('Received Data:', req.body);
   db.query(
     "SELECT Email FROM customers WHERE Email =?",
     [email],
@@ -96,6 +102,8 @@ app.post("/register", (req, res) => {
           "INSERT INTO Customers (Name, DOB, Address,ContactNo,Email,Password) VALUES(?,?,?,?,?,?)",
           [name, dob, address, contactNo, email, req.body.password],
           (err, result) => {
+            console.log('SQL Query:', "INSERT INTO Customers (Name, DOB, Address, ContactNo, Email, Password) VALUES (?, ?, ?, ?, ?, ?)");
+    console.log('Query Parameters:', [name, dob, address, contactNo, email, req.body.password]);
             if (err) {
               console.log(err);
               return res.status(500).json({
@@ -260,7 +268,7 @@ app.get("/pharmacies", (req, res) => {
   });
 });
 
-app.get("/:pharmacyName", (req, res) => {
+app.get("/pharmacies/:pharmacyName", (req, res) => {
   // const cus_id = req.params.Cus_Id;
   // console.log('heyy medicine user;',cus_id)
   // if (!cus_id) {
@@ -361,6 +369,7 @@ app.get("/:pharmacyName", (req, res) => {
     }
   );
 });
+
 
 app.post("/pageorder/addmedicine/:PH_ID/:M_ID/:Cus_ID", (req, res) => {
   const PH_ID = req.params.PH_ID; // Get PH_ID from route parameters
@@ -553,7 +562,7 @@ app.post("/pageorder/deletemedicine/:PH_ID/:M_ID/:Cus_ID", (req, res) => {
 
 app.get("/pageorder/:Cus_ID", (req, res) => {
   const Cus_ID = req.params.Cus_ID;
- console.log("status:",Cus_ID)
+ console.log("order status:",Cus_ID)
   // Step 1: Fetch order details for the specified customer
   db.query(
     "SELECT MedicineName, Quantity, PH_ID, PharmacyName, Price FROM order_med_details WHERE Cus_ID = ?",
@@ -566,7 +575,7 @@ app.get("/pageorder/:Cus_ID", (req, res) => {
           error: "Database error",
         });
       }
-
+      console.log("orderdetails:",orderDetails)
       if (orderDetails.length === 0) {
         return res.status(404).json({
           status: "error",
@@ -605,22 +614,37 @@ app.get("/pageorder/:Cus_ID", (req, res) => {
           }
 
           // Step 5: Send the order confirmation details to the frontend
-          return res.json({
-            status: "ok",
-            orderDetails,
-            total: totalPrice,
-            creditPoints,
-            orderID,
-          });
+          db.query(
+            "UPDATE customers SET CreditPoints = CreditPoints + ? WHERE Cus_ID = ?",
+            [creditPoints, Cus_ID],
+            (err, updateResult) => {
+              if (err) {
+                console.error(err);
+                return res.status(500).json({
+                  status: "error",
+                  error: "Database error while updating Credit Points",
+                });
+              }
+
+              // Step 6: Send the order confirmation details to the frontend
+              return res.json({
+                status: "ok",
+                orderDetails,
+                total: totalPrice,
+                creditPoints,
+                orderID,
+              });
+            }
+          );
         }
       );
     }
   );
 });
 
-app.post("/update/quantity", (req, res) => {
-  const Cus_ID = req.session.userid;
-
+app.post("/update/quantity/:userId", (req, res) => {
+  const Cus_ID = req.params.userId;
+  console.log("updated status:",Cus_ID)
   // Step 1: Fetch order details for the specified customer
   db.query(
     "SELECT MedicineName, Quantity, PH_ID FROM order_med_details WHERE Cus_ID = ?",
@@ -703,6 +727,596 @@ app.post("/update/quantity", (req, res) => {
   );
 });
 
+
+app.get("/carecentres", (req, res) =>{
+  
+  db.query("SELECT * FROM care_centre", (err, result) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).json({
+        status: "error",
+        error: "Database error",
+      });
+    }
+
+    if (result.length > 0) {
+      // const CareNames = result.map((carecentre) => carecentre.Name);
+      // console.log("carecentre Names:", CareNames);
+      // return res.json({
+      //   status: "ok",
+      //   CareNames: CareNames,
+      // });
+      const CareDetails = result;
+      // console.log("carecentre Details:", CareDetails);
+      return res.json({
+        status: "ok",
+        CareDetails: CareDetails,
+      });
+
+    } else {
+      return res.status(404).json({
+        status: "error",
+        error: "No care centre found",
+      });
+    }
+  });
+});
+
+app.get("/carecentres/:CareName", (req, res) => {
+  // const cus_id = req.params.Cus_Id;
+    // console.log('heyy service user;',cus_id)
+   
+    const CareName = req.params.CareName;
+    console.log("carename: ",CareName)
+    // Step 1: Select C_ID corresponding to the given CareName
+    db.query(
+      "SELECT C_ID FROM care_centre WHERE Name = ?",
+      [CareName],
+      (err, resultCare) => {
+        if (err) {
+          console.error(err);
+          return res.status(500).json({
+            status: "error",
+            error: "Database error",
+          });
+        }
+  
+        if (resultCare.length > 0) {
+          const cID = resultCare[0].C_ID;
+  
+          // Step 2: Select S_ID details corresponding to the C_ID from the care_service table
+          db.query(
+            "SELECT S_ID,Timing FROM care_service WHERE C_ID = ?",
+            [cID],
+            (err, resultcareser) => {
+              if (err) {
+                console.error(err);
+                return res.status(500).json({
+                  status: "error",
+                  error: "Database error",
+                });
+              }
+  
+              if (resultcareser.length > 0) {
+                // Step 3: Use the S_ID values to fetch service details from the service table
+                const serviceDetails = resultcareser.map((ser) => {
+                  return {
+                    S_ID: ser.S_ID,
+                    Timing: ser.Timing,
+                  };
+                });
+  
+                const sIds = serviceDetails.map((ser) => ser.S_ID);
+  
+                db.query(
+                  "SELECT * FROM service WHERE S_ID IN (?)",
+                  [sIds],
+                  (err, resultService) => {
+                    if (err) {
+                      console.error(err);
+                      return res.status(500).json({
+                        status: "error",
+                        error: "Database error",
+                      });
+                    }
+  
+                    const serviceDetailsWithInfo = serviceDetails.map((ser) => {
+                      const serviceInfo = resultService.find(
+                        (info) => info.S_ID === ser.S_ID
+                      );
+                      return {
+                        ...ser,
+                        Name: serviceInfo.S_Name,
+                        Price: serviceInfo.Price,
+                        S_Type:serviceInfo.S_Type,
+                        Descption:serviceInfo.Descption,
+                      
+                      };
+                    });
+  
+                    return res.json({
+                      status: "ok",
+                      serviceDetails: serviceDetailsWithInfo,
+                      
+                    });
+                  }
+                );
+              } else {
+                return res.status(404).json({
+                  status: "error",
+                  error: "No service found for this care centre",
+                });
+              }
+            }
+          );
+        } else {
+          return res.status(404).json({
+            status: "error",
+            error: "care centre not found",
+          });
+        }
+      }
+    );
+  });
+
+  app.post("/bookedservices/bookservice/:C_ID/:S_ID/:Cus_ID", (req, res) => {
+    const C_ID = req.params.C_ID; // Get C_ID from route parameters
+    const S_ID = req.params.S_ID; // Get S_ID from route parameters
+    const Timing = req.body.Timing; // Get Timing from request body
+    const Date = req.body.Date;//Get Date from request body
+    const Cus_ID = req.params.Cus_ID; // Assuming  session variable for customer ID 
+    console.log("book ",Cus_ID)
+    console.log('Timing Value:', Timing);
+    
+    
+
+    if ( typeof Timing === 'undefined' || Timing === '' ) {
+       
+      return res.status(400).json({
+        status: "error",
+        error: "Invalid timing. Please provide a valid timing.",
+      });
+    }
+    if (typeof Date === 'undefined' || Date === '' ) {
+       
+        return res.status(400).json({
+          status: "error",
+          error: "Invalid date. Please provide a valid date.",
+        });
+      }
+
+    // Step 1: Check if the requested Timing is less than or equal to the available Timing
+    db.query(
+      "SELECT COUNT(*) AS bookings_count FROM care_service cs JOIN book_status bs ON cs.T_ID = bs.T_ID WHERE cs.Timing = ?  AND bs.S_Date = ?",
+      [Timing,Date],
+      (err, resultTimedel) => {
+        if (err) {
+          console.error(err);
+          return res.status(500).json({
+            status: "error",
+            error: "Database error",
+          });
+        }
+          
+        if (resultTimedel.length > 0) {
+          const bookcount = resultTimedel[0].bookings_timing;
+          const T_ID =resultTimedel[0].T_ID;
+          if (bookcount>0) {
+            return res.status(400).json({
+              status: "error",
+              error: "the service booked on that date ",
+            });
+          }
+         
+       
+  
+          // Step 2: Retrieve additional information from carecentre and service tables
+          db.query(
+            "SELECT care_centre.Name AS carecentreName, service.S_Name AS serviceName, service.Price FROM care_centre, service WHERE care_centre.C_ID = ? AND service.S_ID = ?",
+            [C_ID, S_ID],
+            (err, resultInfo) => {
+              if (err) {
+                console.error(err);
+                return res.status(500).json({
+                  status: "error",
+                  error: "Database error",
+                });
+              }
+  
+              if (resultInfo.length > 0) {
+                const carecentreName = resultInfo[0].carecentreName;
+                const serviceName = resultInfo[0].serviceName;
+                const Price = resultInfo[0].Price;
+        
+        db.query("SELECT T_ID FROM care_service where C_ID = ? AND S_ID = ?",
+          [C_ID,S_ID],
+          (err,resultT_ID) =>{
+             if(err){
+                console.error(err);
+                return res.status(500).json({
+                    status:"error",
+                    error:"Database error",
+                });
+             }
+             
+             if (resultT_ID.length>0){
+                const tid = resultT_ID[0].T_ID;
+
+
+                 // Step 3: Insert the order details into the order_ser_details table with additional information
+                 db.query(
+                    "INSERT INTO order_ser_details (Cus_ID, C_ID, S_ID, T_ID, Care_Name, Ser_Name, Price, Timing, date_booked) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                     [Cus_ID, C_ID, S_ID, tid, carecentreName, serviceName, Price, Timing, Date]
+                    ,
+                    (err, result) => {
+                      if (err) {
+                        console.error(err);
+                        return res.status(500).json({
+                          status: "error",
+                          error: "Database error",
+                        });
+                      }
+    
+                      return res.json({
+                        status: "ok",
+                        message: "service added to order successfully",
+                      });
+                    }
+                  );
+                } else {
+                  return res.status(404).json({
+                    status: "error",
+                    error: "carecentre or service not found",
+                  });
+                }
+              }
+            );
+          } else {
+            return res.status(404).json({
+              status: "error",
+              error: "carecentre or service not found",
+            });
+          }
+        }
+      );
+            
+             }
+            
+          }
+        );
+       
+        
+               
+  });
+
+
+
+
 app.listen("3001", () => {
   console.log("Server running on port 3001");
 });
+
+
+
+
+/*const express = require("express");
+const mysql = require("mysql");
+//const cookieParser = require("cookie-parser");
+// const session = require("express-session");
+const cors = require("cors");
+const bodyParser =require('body-parser');
+
+const app = express();
+app.use(cors({
+  origin: ['http://localhost:3000'],
+  methods:["POST","GET"],
+  credentials:true
+}));
+app.use(express.json());
+//app.use(cookieParser());
+app.use(bodyParser.json())
+const oneDay = 1000 * 60 * 60 * 24;
+const MySQLStore = require("express-mysql-session")(session);
+
+const sessionStore = new MySQLStore({
+  host: "localhost",
+  port: 3306,
+  user: "root",
+  password: "@Sreepriyaks13",
+  database: "medical_care_system",
+});
+
+//session middleware
+app.use(
+  session({
+    secret: "pancakesandbreadandbutter@$9977885",
+    saveUninitialized: false,
+    cookie: { maxAge: oneDay ,
+              sameSite:true,
+    },
+    resave: false,
+    //store: sessionStore, 
+  })
+);
+//create connection
+
+const db = mysql.createConnection({
+  host: "localhost",
+  user: "root",
+  password: "@Sreepriyaks13",
+  database: "medical_care_system",
+});
+//connect
+db.connect((err) => {
+  if (err) {
+    throw err;
+  }
+  console.log("Mysql connected");
+});
+
+//to check if it is a valid session
+const checkAuth = (req, res, next) => {
+  if (!req.session.userid) {
+    return res.status(401).json({
+      status: "error",
+      error: "User not logged in-invalid session",
+    });
+  }
+  next();
+};
+
+
+//mycode
+
+app.get("/carecentres", (req, res) => {
+    // if(req.session.userid){
+    //     console.log("profile sesion back:",req.session.userid)
+    //     return res.json({
+    //       Cus_ID:req.session.userid,
+    //     })
+    //   }
+    //   else{
+    //     console.log("not found session carecentre")
+    //   }
+    db.query("SELECT * FROM care_centre", (err, result) => {
+      if (err) {
+        console.error(err);
+        return res.status(500).json({
+          status: "error",
+          error: "Database error",
+        });
+      }
+  
+      if (result.length > 0) {
+        // const CareNames = result.map((carecentre) => carecentre.Name);
+        // console.log("carecentre Names:", CareNames);
+        // return res.json({
+        //   status: "ok",
+        //   CareNames: CareNames,
+        // });
+        const CareDetails = result;
+        // console.log("carecentre Details:", CareDetails);
+        return res.json({
+          status: "ok",
+          CareDetails: CareDetails,
+        });
+  
+      } else {
+        return res.status(404).json({
+          status: "error",
+          error: "No care centre found",
+        });
+      }
+    });
+  });
+
+
+
+  app.get("/:CareName", (req, res) => {
+    // const cus_id = req.params.Cus_Id;
+    // console.log('heyy service user;',cus_id)
+    // if (!cus_id) {
+    //   // Sending a response here
+    //   return res.status(401).json({
+    //     status: "error",
+    //     error: "Unauthorized - User not logged in",
+    //   });
+    // }
+    const CareName = req.params.CareName;
+    console.log(CareName)
+    // Step 1: Select C_ID corresponding to the given CareName
+    db.query(
+      "SELECT C_ID FROM care_centre WHERE Name = ?",
+      [CareName],
+      (err, resultCare) => {
+        if (err) {
+          console.error(err);
+          return res.status(500).json({
+            status: "error",
+            error: "Database error",
+          });
+        }
+  
+        if (resultCare.length > 0) {
+          const cID = resultCare[0].C_ID;
+  
+          // Step 2: Select S_ID details corresponding to the C_ID from the care_service table
+          db.query(
+            "SELECT S_ID,Timing FROM care_service WHERE C_ID = ?",
+            [cID],
+            (err, resultcareser) => {
+              if (err) {
+                console.error(err);
+                return res.status(500).json({
+                  status: "error",
+                  error: "Database error",
+                });
+              }
+  
+              if (resultcareser.length > 0) {
+                // Step 3: Use the S_ID values to fetch service details from the service table
+                const serviceDetails = resultcareser.map((ser) => {
+                  return {
+                    S_ID: ser.S_ID,
+                    Timing: ser.Timing,
+                  };
+                });
+  
+                const sIds = serviceDetails.map((ser) => ser.S_ID);
+  
+                db.query(
+                  "SELECT * FROM service WHERE S_ID IN (?)",
+                  [sIds],
+                  (err, resultService) => {
+                    if (err) {
+                      console.error(err);
+                      return res.status(500).json({
+                        status: "error",
+                        error: "Database error",
+                      });
+                    }
+  
+                    const serviceDetailsWithInfo = serviceDetails.map((ser) => {
+                      const serviceInfo = resultService.find(
+                        (info) => info.S_ID === ser.S_ID
+                      );
+                      return {
+                        ...ser,
+                        Name: serviceInfo.S_Name,
+                        Price: serviceInfo.Price,
+                        Timing:serviceInfo.Timing,
+                      };
+                    });
+  
+                    return res.json({
+                      status: "ok",
+                      serviceDetails: serviceDetailsWithInfo,
+                    });
+                  }
+                );
+              } else {
+                return res.status(404).json({
+                  status: "error",
+                  error: "No service found for this care centre",
+                });
+              }
+            }
+          );
+        } else {
+          return res.status(404).json({
+            status: "error",
+            error: "care centre not found",
+          });
+        }
+      }
+    );
+  });
+
+
+
+
+
+/*
+
+  app.post("/pageorder/bookservice/:C_ID/:S_ID/:Cus_ID", (req, res) => {
+    const C_ID = req.params.C_ID; // Get C_ID from route parameters
+    const S_ID = req.params.S_ID; // Get S_ID from route parameters
+    const Date = req.body.Date;//Get Timing from request body
+    const Timing = req.body.Timing; // Get Timing from request body
+    const Cus_ID = req.params.Cus_ID; // Assuming  session variable for customer ID 
+    console.log("add ",Cus_ID)
+    if (Timing === null || isNaN(Timing)) {
+
+      return res.status(400).json({
+        status: "error",
+        error: "Invalid quantity. Please provide a valid quantity.",
+      });
+    }
+    // Step 1: Check if the requested quantity is less than or equal to the available quantity
+    db.query(
+      "SELECT Timing_available FROM med_carecentre WHERE C_ID = ? AND S_ID = ?",
+      [C_ID, S_ID],
+      (err, resultTiming) => {
+        if (err) {
+          console.error(err);
+          return res.status(500).json({
+            status: "error",
+            error: "Database error",
+          });
+        }
+  
+        if (resultTiming.length > 0) {
+          const availableTiming = resultTiming[0].Timing_available;
+  
+          if (Timing > availableTiming) {
+            return res.status(400).json({
+              status: "error",
+              error: "Requested quantity exceeds available quantity",
+            });
+          }
+  
+          // Step 2: Retrieve additional information from carecentre and service tables
+          db.query(
+            "SELECT carecentre.Name AS carecentreName, service.Name AS serviceName, service.Price FROM carecentre, service WHERE carecentre.C_ID = ? AND service.S_ID = ?",
+            [C_ID, S_ID],
+            (err, resultInfo) => {
+              if (err) {
+                console.error(err);
+                return res.status(500).json({
+                  status: "error",
+                  error: "Database error",
+                });
+              }
+  
+              if (resultInfo.length > 0) {
+                const carecentreName = resultInfo[0].carecentreName;
+                const serviceName = resultInfo[0].serviceName;
+                const Price = resultInfo[0].Price;
+  
+                // Step 3: Insert the order details into the Order_med_details table with additional information
+                db.query(
+                  "INSERT INTO Order_Med_details (Cus_ID, C_ID, S_ID, carecentreName, serviceName, Price, Quantity) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                  [Cus_ID, C_ID, S_ID, carecentreName, serviceName, Price, Timing],
+                  (err, result) => {
+                    if (err) {
+                      console.error(err);
+                      return res.status(500).json({
+                        status: "error",
+                        error: "Database error",
+                      });
+                    }
+  
+                    return res.json({
+                      status: "ok",
+                      message: "service added to order successfully",
+                    });
+                  }
+                );
+              } else {
+                return res.status(404).json({
+                  status: "error",
+                  error: "carecentre or service not found",
+                });
+              }
+            }
+          );
+        } else {
+          return res.status(404).json({
+            status: "error",
+            error: "carecentre or service not found",
+          });
+        }
+      }
+    );
+  });
+
+
+*/
+
+{/*}
+
+app.listen("3000", () => {
+    console.log("Server running on port 3000");
+  });
+
+*/}

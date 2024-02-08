@@ -1,5 +1,6 @@
 #mediorder{
     background-color: #566683;
+    flex-direction: row;
 }
 .order_details{
     margin:5%;

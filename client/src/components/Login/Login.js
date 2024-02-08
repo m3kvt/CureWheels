@@ -1,261 +1,238 @@
-import React, { useState, useEffect} from 'react';
-import './Login.css';
-import { Link, useNavigate} from 'react-router-dom';
-import axios from 'axios';
+import React, { useEffect, useState } from "react";
+import "./Login.css";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
 
 const Login = () => {
-  const [action, setAction] = useState('Login');
-  const [loggedIn, setLoggedIn] = useState(false);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  //const [email, setemail] = useState("");
-  //const [password, setpassword] = useState("");
-  const [loginstatus,setloginstatus]=useState("");
+  const [action, setAction] = useState("Login");
+
   const [inputs, setInputs] = useState({
-    Cus_ID:'',
-    name: '',
-    dob: '',
-    address:'',
-    contactNo: '',
-    email: '',
-    password: '',
+    Cus_ID: "",
+    name: "",
+    dob: "",
+    address: "",
+    contactNo: "",
+    email: "",
+    password: "",
   });
+  const [formvalues, setformvalues] = useState(inputs);
+  const [formerrors, setformerrors] = useState({});
+  const [isSubmit, setIsSubmit] = useState(false);
+
   const navigate = useNavigate();
   const handleChange = (e) => {
+    console.log(e.target);
+    setformvalues({ ...formvalues, [e.target.name]: e.target.value });
     setInputs((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+    console.log("inputs:", inputs);
   };
 
   const handleSignup = async () => {
+    alert("Successfully registered");
     try {
-      // Make a POST request to register the user
-      const response = await axios.post('http://localhost:3001/register', inputs);
+      const response = await axios.post(
+        "http://localhost:3001/register",
+        formvalues
+      );
       const userId = response.data;
-      // Handle registration success, you can set a success message or navigate to another page
-      console.log('Registration successful:',userId);
-      //navigate(`/pageprofile/${userId}`);
-      alert("succesfully registered");
+
+      if (response.data.status === "error") {
+        alert(`Registration error: ${response.data.error}`);
+      } else {
+        console.log("Registration successful:", userId);
+
+        alert("Successfully registered");
+      }
     } catch (error) {
-      // Handle registration error, show an error message, or set an error state
-      console.error('Registration error:', error);
-    }
-  };
-  
-  const handleLogin = async () => {
-    try {
-      // Make a POST request to log in the user
-      const response = await axios.post('http://localhost:3001/login', inputs);
-      const userId = response.data.userId;
-      //localStorage.setItem('userId', userId); 
-      console.log('Login response:', response.data); 
-    // Handle login success, you can navigate to another page or set a logged-in state
-    if (userId) {
-      console.log("navigating")
-      localStorage.setItem('userData', JSON.stringify(response.data));
-      localStorage.setItem('userId',userId)
-      navigate(`/pageprofile/${userId}`);      
-    }else{
-      alert("Invalid Email or Password")
-    }
-    } catch (error) {
-      // Handle login error, show an error message, or set an error state
-      console.error('Login error:', error);
+      console.error("Registration error:", error);
     }
   };
 
+  const handleLogin = async () => {
+    try {
+      const response = await axios.post(
+        "http://localhost:3001/login",
+        formvalues
+      );
+      const userId = response.data.userId;
+
+      console.log("Login response:", response.data);
+
+      if (userId) {
+        console.log("navigating");
+        localStorage.setItem("userData", JSON.stringify(response.data));
+        localStorage.setItem("userId", userId);
+        navigate(`/pageprofile/${userId}`);
+      } else {
+        alert("Invalid Email or Password");
+      }
+    } catch (error) {
+      console.error("Login error:", error);
+    }
+  };
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setformerrors(validate(formvalues));
+    console.log("Form Values:", formvalues);
+    setIsSubmit(true);
+  };
+  useEffect(() => {
+    if (Object.keys(formerrors).length === 0 && isSubmit) {
+      console.log(formvalues);
+    }
+  }, [formerrors]);
+
+  const handleDateChange = (date) => {
+    console.log("given date:", date);
+    if (date) {
+      const formattedDate = new Date(date).toISOString().split("T")[0];
+      console.log("Formatted Date:", formattedDate);
+      setformvalues({ ...formvalues, dob: formattedDate }, () => {
+        console.log("Updated formvalues:", formvalues);
+      });
+    }
+  };
+  const validate = (values) => {
+    const errors = {};
+
+    if (!values.name) {
+      errors.name = "Name is required";
+    } else if (!/^[a-zA-Z ]{3,50}$/.test(values.name)) {
+      errors.name = "invalid name";
+    }
+
+    if (!values.dob) {
+      errors.dob = "Date of birth is required";
+    } else if (!/^\d{4}-\d{2}-\d{2}$/.test(values.dob)) {
+      errors.dob = "Invalid date of birth format (YYYY-MM-DD)";
+    }
+
+    if (!values.contactNo) {
+      errors.contactNo = "Phone number is required";
+    } else if (!/^\d{10}$/.test(values.contactNo)) {
+      errors.contactNo = "Invalid phone number (10 digits)";
+    }
+
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    if (!values.email) {
+      errors.email = "Email is required";
+    } else if (!emailRegex.test(values.email)) {
+      errors.email = "Invalid email address";
+    }
+
+    return errors;
+  };
 
   return (
     <div>
-      <div className='header'>
-        <div className='text'>{action}</div>
-        <div className='underline'></div>
-      </div>
-      <div className='inputs'>
-        {action === 'Login' ? null : (
-        <>
-          <div className='input'>
+      {/* <pre>{JSON.stringify(formvalues, undefined, 2)}</pre> */}
+      <form onSubmit={handleSubmit}>
+        <div className="header">
+          <div className="text">{action}</div>
+          <div className="underline"></div>
+        </div>
+        <div className="inputs">
+          {action === "Login" ? null : (
+            <>
+              <div className="input">
+                <input
+                  type="text"
+                  name="name"
+                  placeholder="name"
+                  onChange={handleChange}
+                  value={formvalues.name}
+                  style={{ width: "230px", height: "25px" }}
+                />
+              </div>
+              <p className="error">{formerrors.name}</p>
+              <div className="input">
+                <input
+                  type="text"
+                  name="dob"
+                  placeholder="dob"
+                  onChange={handleChange}
+                  value={formvalues.dob}
+                  style={{ width: "230px", height: "25px" }}
+                />
+              </div>
+
+              <p className="error">{formerrors.dob}</p>
+              <div className="input">
+                <input
+                  type="text"
+                  name="address"
+                  placeholder="address"
+                  onChange={handleChange}
+                  value={formvalues.address}
+                  style={{ width: "230px", height: "25px" }}
+                />
+              </div>
+              <p></p>
+              <div className="input">
+                <input
+                  type="tel"
+                  name="contactNo"
+                  placeholder="phone no"
+                  pattern="[0-9]{10}"
+                  onChange={handleChange}
+                  value={formvalues.contactNo}
+                  style={{ width: "230px", height: "25px" }}
+                />
+              </div>
+              <p className="error">{formerrors.contactNo}</p>
+            </>
+          )}
+          <div className="input">
             <input
-              type='text'
-              name='name'
-              placeholder='name'
+              type="email"
+              name="email"
+              placeholder="email"
+              autoComplete="email"
               onChange={handleChange}
+              value={formvalues.email}
+              style={{ width: "230px", height: "25px" }}
             />
           </div>
-          <div className='input'>
+          <p className="error">{formerrors.email}</p>
+          <div className="input">
             <input
-              type='text'
-              name='dob'
-              placeholder='date of birth'
+              type="password"
+              name="password"
+              placeholder="password"
               onChange={handleChange}
+              value={formvalues.password}
+              style={{ width: "230px", height: "25px" }}
             />
           </div>
-          <div className='input'>
-            <input
-              type='text'
-              name='address'
-              placeholder='address'
-              onChange={handleChange}
-            />
+          <p className="error">{formerrors.password}</p>
+        </div>
+        {action === "Sign Up" ? (
+          <div className="forgot">
+            Already a user?{" "}
+            <span onClick={() => setAction("Login")}>Log in</span>
           </div>
-          <div className='input'>
-            <input
-              type='tel'
-              name='contactNo'
-              placeholder='phone no'
-              pattern='[0-9]{10}'
-              onChange={handleChange}
-            />
-          </div>
-        </>
-        )}
-        <div className='input'>
-          <input
-            type='email'
-            name='email'
-            placeholder='email'
-            autoComplete='email'
-            onChange={handleChange}
-          />
-        </div>
-        <div className='input'>
-          <input
-            type='password'
-            name='password'
-            placeholder='password'
-            onChange={handleChange}
-          />
-        </div>
-      </div>
-      {action === 'Sign Up' ? (
-        <div className='forgot'>
-          Already a user?{' '}
-          <span onClick={() => setAction('Login')}>Log in</span>
-        </div>
-      ) : (
-        <div className='forgot'>
-          No account?{' '}
-          <span onClick={() => setAction('Sign Up')}>Create one</span>
-        </div>
-      )}
-      <div className='submit-container'>
-        {action === 'Login' ? (
-          <button className='submit' onClick={handleLogin}>
-            Login
-          </button>
         ) : (
-          <button className='submit' onClick={handleSignup}>
-            Sign Up
-          </button>
+          <div className="forgot">
+            No account?{" "}
+            <span onClick={() => setAction("Sign Up")}>Create one</span>
+          </div>
         )}
-      </div>
+        <div className="submit-container">
+          {action === "Login" ? (
+            <button className="submit" onClick={handleLogin}>
+              Login
+            </button>
+          ) : (
+            <button className="submit" onClick={handleSignup}>
+              Sign Up
+            </button>
+          )}
+        </div>
+      </form>
     </div>
   );
 };
 
 export default Login;
-
-
-
-
-/*
-const Login = () => {
-  const [action, setAction] = useState('Login');
-  const [inputs, setInputs] = useState({
-    name: '',
-    dob: '',
-    address:'',
-    comtactNo: '',
-    email: '',
-    storedPassword: '',
-  });
-  const [err, setError] = useState(null);
-  const navigate = useNavigate();
-  const handleChange = (e) => {
-    setInputs((prev) => ({ ...prev, [e.target.name]: e.target.value }));
-  };
-
-  const handleSignup = async () => {
-    try {
-      // Make a POST request to register the user
-      const response = await axios.post('http://localhost:3001/register', inputs);
-      const userId = response.data.userId;
-      
-      // Handle registration success, you can set a success message or navigate to another page
-      console.log('Registration successful');
-      navigate(`/pageprofile/${userId}`);
-    } catch (error) {
-      // Handle registration error, show an error message, or set an error state
-      console.error('Registration error:', error);
-    }
-  };
-
-  const handleLogin = async () => {
-    try {
-      // Make a POST request to log in the user
-      const response = await axios.post('http://localhost:3001/login', inputs);
-      const userId = response.data.userId; 
-    // Handle login success, you can navigate to another page or set a logged-in state
-    if (userId) {
-      navigate(`/pageprofile/${userId}`);
-    }
-    } catch (error) {
-      // Handle login error, show an error message, or set an error state
-      console.error('Login error:', error);
-    }
-  };
-
-
-import React from 'react';
-import './Login.css'
-import { useState } from 'react';
-import {Link,useNavigate} from 'react-router-dom'
-import axios from "axios"
-const Login = () => {
-    const [action,setAction]=useState("Login");
-    const [inputs,setInputs]=useState({
-        username:"",
-        email:"",
-        password:""
-      })
-      const [err,setError] = useState(null);
-      const navigate = useNavigate();
-    
-      const handleChange = e=>{
-        setInputs(prev=>({...prev,[e.target.name]:e.target.value}))
-      }
-      const handleSubmit= async (e) =>{
-        e.preventDefault()
-        
-      }
-  return (        
-        <div >
-            <div className='header'>
-                <div className='text'>{action}</div>
-                <div className='underline'></div>
-            </div>
-            <div className='inputs'>
-                {action==="Login"?<div></div>:<div className='input'>
-                    <input type="text" placeholder="name"/>
-                </div>}
-                
-                <div className='input'>
-                    <input type="email" placeholder="email"/>
-                </div>
-                <div className='input'>
-                    <input type="password" placeholder="password"/>
-                </div>
-                </div>
-                {action==="Sign Up"?<div className="forgot">Already a user?
-                    <span onClick={()=>{setAction("Login")}}> log in</span></div>:<div className="forgot">No account?
-                    <span onClick={()=>{setAction("Sign Up")}}> create one</span>
-                </div>}                
-                <div className='submit-container'>                   
-                    <button className={action==="Login"?"submit gray":"submit"} onClick={()=>{setAction("Sign Up")}}>Sign Up</button>
-                    <button className={action==="Sign Up"?"submit gray":"submit"} onClick={()=>{setAction("Login")}}><Link to="/pageprofile" className='link' >Login</Link></button>
-                </div>          
-        </div>
-    
-  )
-}
-
-export default Login*/
